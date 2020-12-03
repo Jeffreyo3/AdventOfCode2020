@@ -72,18 +72,10 @@ function traverseToboggan(visibleMap, lateralMovement, horizontalMovement) {
 }
 
 function processMultipleTobogganTraversal(visibleMap, movementArr) {
-    let product = traverseToboggan(
-        visibleMap,
-        movementArr[0][0],
-        movementArr[0][1]
-    );
+    let product = 1;
 
-    for (let i = 1; i < movementArr.length; i++) {
-        product *= traverseToboggan(
-            visibleMap,
-            movementArr[i][0],
-            movementArr[i][1]
-        );
+    for (const item of movementArr) {
+        product *= traverseToboggan(visibleMap, item[0], item[1]);
     }
 
     return product;
