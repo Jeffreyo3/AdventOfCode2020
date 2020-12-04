@@ -259,4 +259,4 @@ class PassportValidator:
 
 v = PassportValidator()
 res = countValidPassports(data, v.validateAll)
-print(res)
+print("Part 2: ", res)
