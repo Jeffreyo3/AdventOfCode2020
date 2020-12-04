@@ -157,10 +157,11 @@ iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719
 Count the number of valid passports - those that have all required fields and valid values. Continue to treat cid as optional. In your batch file, how many passports are valid?
 """
 class PassportValidator:
-    def __init__(self, validHexCharacters = set("0123456789ABCDEFabcdef"), validEyeColors = set(["amb", "blu", "brn", "gry", "grn", "hzl", "oth"]), requiredFields = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]):
-        self.validHexCharacters = validHexCharacters
-        self.validEyeColors = validEyeColors
+    validHexCharacters = set("0123456789ABCDEFabcdef")
+
+    def __init__(self, requiredFields = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"], validEyeColors = set(["amb", "blu", "brn", "gry", "grn", "hzl", "oth"])):
         self.requiredFields = requiredFields
+        self.validEyeColors = validEyeColors
 
     def validateAll(self, passport):
         if not self.validatePassportFields(passport):
