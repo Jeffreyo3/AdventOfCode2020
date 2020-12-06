@@ -44,8 +44,6 @@ According to the above rules, your improved system would report 2 valid passport
 Count the number of valid passports - those that have all required fields. Treat cid as optional. In your batch file, how many passports are valid?
 """
 import re
-
-
 f = open("challenges\data\day4data.txt", "r")
 
 
