@@ -115,6 +115,7 @@ function countGroupAllYes(groupForms) {
     let yesHash = {};
     const numOfPeople = groupForms.length;
 
+    let count = 0;
     for (personForm of groupForms) {
         for (let i = 0; i < personForm.length; i++) {
             if (yesHash.hasOwnProperty(personForm[i])) {
@@ -122,16 +123,11 @@ function countGroupAllYes(groupForms) {
             } else {
                 yesHash[personForm[i]] = 1;
             }
+            if (yesHash[personForm[i]] === numOfPeople) {
+                count += 1;
+            }
         }
     }
-
-    let count = 0;
-    for (const key of Object.keys(yesHash)) {
-        if (yesHash[key] === numOfPeople) {
-            count += 1;
-        }
-    }
-
     return count;
 }
 
