@@ -84,14 +84,13 @@ Find a chain that uses all of your adapters to connect the charging outlet to yo
 const fs = require("fs");
 const filename = "./challenges/data/day10data.txt";
 
-function calculateDistribution(joltageArr) {
-    const adapters = [0, ...joltageArr];
-    adapters.sort((a, b) => a - b);
+function calculateDistribution(adapters) {
+    adapters.unshift(0);
 
     const tally = {};
 
     for (let i = 1; i < adapters.length; i++) {
-        const difference = adapters[i] - adapters[i - 1];
+        const difference = +adapters[i] - +adapters[i - 1];
         tally[difference] = !tally[difference] ? 1 : tally[difference] + 1;
     }
 
@@ -152,12 +151,32 @@ You glance back down at your bag and try to remember why you brought so many ada
 What is the total number of distinct ways you can arrange the adapters to connect the charging outlet to your device?
 */
 
+function calculateNumOfCombinations(adapters, cache = {}) {
+    const currArr = adapters.join();
+    if (currArr in cache) {
+        return cache[currArr];
+    }
+
+    let result = 1;
+    for (let i = 1; i < adapters.length - 1; i++) {
+        if (adapters[i + 1] - adapters[i - 1] <= 3) {
+            const subArr = [adapters[i - 1], ...adapters.slice(i + 1)];
+            result += calculateNumOfCombinations(subArr, cache);
+        }
+    }
+    cache[currArr] = result;
+    return result;
+}
+
 fs.readFile(filename, "utf8", function (err, text) {
     if (err) throw err;
     console.log("OK: " + filename);
     const data = text.toString().split(new RegExp("\\r?\\n"));
     // const data = [16, 10, 15, 5, 1, 11, 7, 19, 6, 12, 4];
+    data.sort((a, b) => a - b);
+
     console.log(data);
 
     console.log("Part 1: ", calculateDistribution(data));
+    console.log("Part 2: ", calculateNumOfCombinations(data));
 });
