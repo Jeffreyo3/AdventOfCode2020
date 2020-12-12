@@ -132,11 +132,7 @@ function countNeighborsByIdx(rowIdx, colIdx, seatingChart) {
     return counts;
 }
 
-function replaceAt(idx, char, string) {
-    return string.substring(0, idx) + char + string.substring(idx + 1);
-}
-
-function simulate(seatingChart) {
+function simulate(seatingChart, populationMethod, takenThreshold) {
     let predictedChart = [...seatingChart];
     let hasChanged = true;
 
@@ -152,12 +148,15 @@ function simulate(seatingChart) {
                     continue;
                 }
                 // console.log("row", ri, "col", ci);
-                const count = countNeighborsByIdx(ri, ci, predictedChart);
+                const count = populationMethod(ri, ci, predictedChart);
 
                 if (predictedChart[ri][ci] === "L" && count.taken === 0) {
                     updatedRow += "#";
                     hasChanged = true;
-                } else if (predictedChart[ri][ci] === "#" && count.taken >= 4) {
+                } else if (
+                    predictedChart[ri][ci] === "#" &&
+                    count.taken >= takenThreshold
+                ) {
                     updatedRow += "L";
                     hasChanged = true;
                 } else {
@@ -188,14 +187,194 @@ function countOccupied(seatingChart) {
     return occupied;
 }
 
+/* 
+--- Part Two ---
+As soon as people start to arrive, you realize your mistake. People don't just care about adjacent seats - they care about the first seat they can see in each of those eight directions!
+
+Now, instead of considering just the eight immediately adjacent seats, consider the first seat in each of those eight directions. For example, the empty seat below would see eight occupied seats:
+
+.......#.
+...#.....
+.#.......
+.........
+..#L....#
+....#....
+.........
+#........
+...#.....
+The leftmost empty seat below would only see one empty seat, but cannot see any of the occupied ones:
+
+.............
+.L.L.#.#.#.#.
+.............
+The empty seat below would see no occupied seats:
+
+.##.##.
+#.#.#.#
+##...##
+...L...
+##...##
+#.#.#.#
+.##.##.
+Also, people seem to be more tolerant than you expected: it now takes five or more visible occupied seats for an occupied seat to become empty (rather than four or more from the previous rules). The other rules still apply: empty seats that see no occupied seats become occupied, seats matching no rule don't change, and floor never changes.
+
+Given the same starting layout as above, these new rules cause the seating area to shift around as follows:
+
+L.LL.LL.LL
+LLLLLLL.LL
+L.L.L..L..
+LLLL.LL.LL
+L.LL.LL.LL
+L.LLLLL.LL
+..L.L.....
+LLLLLLLLLL
+L.LLLLLL.L
+L.LLLLL.LL
+#.##.##.##
+#######.##
+#.#.#..#..
+####.##.##
+#.##.##.##
+#.#####.##
+..#.#.....
+##########
+#.######.#
+#.#####.##
+#.LL.LL.L#
+#LLLLLL.LL
+L.L.L..L..
+LLLL.LL.LL
+L.LL.LL.LL
+L.LLLLL.LL
+..L.L.....
+LLLLLLLLL#
+#.LLLLLL.L
+#.LLLLL.L#
+#.L#.##.L#
+#L#####.LL
+L.#.#..#..
+##L#.##.##
+#.##.#L.##
+#.#####.#L
+..#.#.....
+LLL####LL#
+#.L#####.L
+#.L####.L#
+#.L#.L#.L#
+#LLLLLL.LL
+L.L.L..#..
+##LL.LL.L#
+L.LL.LL.L#
+#.LLLLL.LL
+..L.L.....
+LLLLLLLLL#
+#.LLLLL#.L
+#.L#LL#.L#
+#.L#.L#.L#
+#LLLLLL.LL
+L.L.L..#..
+##L#.#L.L#
+L.L#.#L.L#
+#.L####.LL
+..#.#.....
+LLL###LLL#
+#.LLLLL#.L
+#.L#LL#.L#
+#.L#.L#.L#
+#LLLLLL.LL
+L.L.L..#..
+##L#.#L.L#
+L.L#.LL.L#
+#.LLLL#.LL
+..#.L.....
+LLL###LLL#
+#.LLLLL#.L
+#.L#LL#.L#
+Again, at this point, people stop shifting around and the seating area reaches equilibrium. Once this occurs, you count 26 occupied seats.
+
+Given the new visibility method and the rule change for occupied seats becoming empty, once equilibrium is reached, how many seats end up occupied?
+*/
+
+function replaceAt(idx, char, string) {
+    return string.substring(0, idx) + char + string.substring(idx + 1);
+}
+
+function countVisibleNeighborsByIdx(rowIdx, colIdx, seatingChart) {
+    const height = seatingChart.length;
+    const width = seatingChart[rowIdx].length;
+
+    // console.log("height:", height, "- width:", width);
+
+    let counts = {
+        open: 0,
+        taken: 0,
+    };
+
+    // [row, col]
+    const directions = [
+        // north
+        [1, 0],
+        // north east
+        [1, 1],
+        // east
+        [0, 1],
+        // south east
+        [-1, 1],
+        // south
+        [-1, 0],
+        // south west
+        [-1, -1],
+        // west
+        [0, -1],
+        // north west
+        [1, -1],
+    ];
+
+    for (d of directions) {
+        let currRow = rowIdx;
+        let currCol = colIdx;
+
+        let found = false;
+
+        while (!found) {
+            currRow = currRow + d[0];
+            currCol = currCol + d[1];
+            // console.log(d, currRow, currCol);
+
+            if (
+                currRow >= height ||
+                currRow < 0 ||
+                currCol >= width ||
+                currCol < 0
+            ) {
+                found = true;
+                break;
+            }
+
+            if (seatingChart[currRow][currCol] === "L") {
+                counts.open += 1;
+                found = true;
+            }
+            if (seatingChart[currRow][currCol] === "#") {
+                counts.taken += 1;
+                found = true;
+            }
+        }
+    }
+
+    return counts;
+}
+
 fs.readFile(filename, "utf8", function (err, text) {
     if (err) throw err;
     console.log("OK: " + filename);
     const data = text.toString().split(new RegExp("\\r?\\n"));
 
-    // console.log(data);
-    // console.log(data.length);
-    const predictedChart = simulate(data);
+    const predictedChart = simulate(data, countNeighborsByIdx, 4);
     const occupiedCount = countOccupied(predictedChart);
     console.log("Part 1: ", occupiedCount);
+
+    const predictedVisibleChart = simulate(data, countVisibleNeighborsByIdx, 5);
+    const occupiedVisibleCount = countOccupied(predictedVisibleChart);
+    console.log("Part 2: ", occupiedVisibleCount);
 });
