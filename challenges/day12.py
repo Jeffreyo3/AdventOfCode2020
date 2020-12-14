@@ -115,7 +115,6 @@ class Ship:
 instructions = processData(f)
 ship = Ship("e", instructions)
 ship.navigate()
-print(ship.coords)
 print("Part 1:", ship.findManhattanDistance())
 
 
@@ -185,27 +184,23 @@ class Boat:
 
 
     def rotateWaypoint(self, rotations):
-        print(rotations)
         turns = rotations % 4
-        print(turns)
+        
         if rotations < 0 and rotations % 2 != 0:
             mod = (-rotations) % 4
             turns = -mod
-        print(turns)
+        
         temp_ns = self.waypoint["north_south"]
         temp_ew = self.waypoint["east_west"]
-        if turns == 1:
+        if turns == 1 or turns == -3:
             self.waypoint["north_south"] = -temp_ew
-            self.waypoint["east_west"] = temp_ns  
-        elif turns == -3:
+            self.waypoint["east_west"] = temp_ns
+        elif turns == 3 or turns == -1:
             self.waypoint["north_south"] = temp_ew
             self.waypoint["east_west"] = -temp_ns
         elif turns == 2:
             self.waypoint["north_south"] = -temp_ns
             self.waypoint["east_west"] = -temp_ew
-        elif turns == 3 or turns == -1:
-            self.waypoint["north_south"] = -temp_ew
-            self.waypoint["east_west"] = -temp_ns
         else:
             pass
         
@@ -214,21 +209,19 @@ class Boat:
         while(value > 0):
             rotations += 1
             value -= 90
-        print(f"rotate {rotations}", self.waypoint)
         self.rotateWaypoint(rotations)
-        print(self.waypoint)
+        
     def rotateWaypointCounterClockwise(self, value):
         rotations = 0
         while(value > 0):
             rotations -= 1
             value -= 90
-        print(f"rotate {rotations}", self.waypoint)
         self.rotateWaypoint(rotations)
-        print(self.waypoint)
+        
 
 
     def moveToWaypoint(self, value):
-        print(self.waypoint)
+        
         self.coords["north_south"] += (self.waypoint["north_south"] * value)
         self.coords["east_west"] += (self.waypoint["east_west"] * value)
 
@@ -236,10 +229,7 @@ class Boat:
         for instruction in self.instructions:
             if instruction[0] in self.directions.keys():
                 self.directions[instruction[0]](instruction[1])
-                if instruction[0] != "F":
-                    print("waypoint CHANGE", instruction, self.waypoint)
             elif instruction[0] in self.rotateDirections.keys():
-                print(instruction[1])
                 self.rotateDirections[instruction[0]](instruction[1])
             else: 
                 raise ValueError("Unreadable instruction")
@@ -250,6 +240,4 @@ class Boat:
 
 boat = Boat("e", instructions, 1, 10)
 boat.navigate()
-print("waypoint", boat.waypoint)
-print("coords", boat.coords)
 print("Part 2:", boat.findManhattanDistance())
