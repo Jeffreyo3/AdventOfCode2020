@@ -112,7 +112,144 @@ class Ship:
         return abs(self.coords["north_south"]) + abs(self.coords["east_west"])
 
 
-
-ship = Ship("e", processData(f))
+instructions = processData(f)
+ship = Ship("e", instructions)
 ship.navigate()
+print(ship.coords)
 print("Part 1:", ship.findManhattanDistance())
+
+
+"""
+--- Part Two ---
+Before you can give the destination to the captain, you realize that the actual action meanings were printed on the back of the instructions the whole time.
+
+Almost all of the actions indicate how to move a waypoint which is relative to the ship's position:
+
+Action N means to move the waypoint north by the given value.
+Action S means to move the waypoint south by the given value.
+Action E means to move the waypoint east by the given value.
+Action W means to move the waypoint west by the given value.
+Action L means to rotate the waypoint around the ship left (counter-clockwise) the given number of degrees.
+Action R means to rotate the waypoint around the ship right (clockwise) the given number of degrees.
+Action F means to move forward to the waypoint a number of times equal to the given value.
+The waypoint starts 10 units east and 1 unit north relative to the ship. The waypoint is relative to the ship; that is, if the ship moves, the waypoint moves with it.
+
+For example, using the same instructions as above:
+
+F10 moves the ship to the waypoint 10 times (a total of 100 units east and 10 units north), leaving the ship at east 100, north 10. The waypoint stays 10 units east and 1 unit north of the ship.
+N3 moves the waypoint 3 units north to 10 units east and 4 units north of the ship. The ship remains at east 100, north 10.
+F7 moves the ship to the waypoint 7 times (a total of 70 units east and 28 units north), leaving the ship at east 170, north 38. The waypoint stays 10 units east and 4 units north of the ship.
+R90 rotates the waypoint around the ship clockwise 90 degrees, moving it to 4 units east and 10 units south of the ship. The ship remains at east 170, north 38.
+F11 moves the ship to the waypoint 11 times (a total of 44 units east and 110 units south), leaving the ship at east 214, south 72. The waypoint stays 4 units east and 10 units south of the ship.
+After these operations, the ship's Manhattan distance from its starting position is 214 + 72 = 286.
+
+Figure out where the navigation instructions actually lead. What is the Manhattan distance between that location and the ship's starting position?
+"""
+
+class Boat:
+    
+    def __init__(self, facing, instructions, waypoint_ns, waypoint_ew):
+        self.facing = facing.upper()
+        self.instructions = instructions
+        self.waypoint = {
+            # north positive; south negative
+            "north_south": waypoint_ns,
+            # east positive; west negative
+            "east_west": waypoint_ew
+        }
+        self.coords = {
+            "north_south": 0,
+            "east_west": 0
+        }
+        self.directions = {
+            "N": self.moveWaypointNorth,
+            "S": self.moveWaypointSouth,
+            "E": self.moveWaypointEast,
+            "W": self.moveWaypointWest,
+            "F": self.moveToWaypoint
+        }
+        self.rotateDirections = {
+            "R": self.rotateWaypointClockwise,
+            "L": self.rotateWaypointCounterClockwise
+        }
+
+
+    def moveWaypointNorth(self, value):
+        self.waypoint["north_south"] += value
+    def moveWaypointSouth(self, value):
+        self.waypoint["north_south"] -= value
+    def moveWaypointEast(self, value):
+        self.waypoint["east_west"] += value
+    def moveWaypointWest(self, value):
+        self.waypoint["east_west"] -= value
+
+
+    def rotateWaypoint(self, rotations):
+        print(rotations)
+        turns = rotations % 4
+        print(turns)
+        if rotations < 0 and rotations % 2 != 0:
+            mod = (-rotations) % 4
+            turns = -mod
+        print(turns)
+        temp_ns = self.waypoint["north_south"]
+        temp_ew = self.waypoint["east_west"]
+        if turns == 1:
+            self.waypoint["north_south"] = -temp_ew
+            self.waypoint["east_west"] = temp_ns  
+        elif turns == -3:
+            self.waypoint["north_south"] = temp_ew
+            self.waypoint["east_west"] = -temp_ns
+        elif turns == 2:
+            self.waypoint["north_south"] = -temp_ns
+            self.waypoint["east_west"] = -temp_ew
+        elif turns == 3 or turns == -1:
+            self.waypoint["north_south"] = -temp_ew
+            self.waypoint["east_west"] = -temp_ns
+        else:
+            pass
+        
+    def rotateWaypointClockwise(self, value):
+        rotations = 0
+        while(value > 0):
+            rotations += 1
+            value -= 90
+        print(f"rotate {rotations}", self.waypoint)
+        self.rotateWaypoint(rotations)
+        print(self.waypoint)
+    def rotateWaypointCounterClockwise(self, value):
+        rotations = 0
+        while(value > 0):
+            rotations -= 1
+            value -= 90
+        print(f"rotate {rotations}", self.waypoint)
+        self.rotateWaypoint(rotations)
+        print(self.waypoint)
+
+
+    def moveToWaypoint(self, value):
+        print(self.waypoint)
+        self.coords["north_south"] += (self.waypoint["north_south"] * value)
+        self.coords["east_west"] += (self.waypoint["east_west"] * value)
+
+    def navigate(self):
+        for instruction in self.instructions:
+            if instruction[0] in self.directions.keys():
+                self.directions[instruction[0]](instruction[1])
+                if instruction[0] != "F":
+                    print("waypoint CHANGE", instruction, self.waypoint)
+            elif instruction[0] in self.rotateDirections.keys():
+                print(instruction[1])
+                self.rotateDirections[instruction[0]](instruction[1])
+            else: 
+                raise ValueError("Unreadable instruction")
+
+    
+    def findManhattanDistance(self):
+        return abs(self.coords["north_south"]) + abs(self.coords["east_west"])
+
+boat = Boat("e", instructions, 1, 10)
+boat.navigate()
+print("waypoint", boat.waypoint)
+print("coords", boat.coords)
+print("Part 2:", boat.findManhattanDistance())
