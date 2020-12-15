@@ -52,7 +52,11 @@ def processData(file):
 # Function to convert Decimal number  
 # to Binary number  
 def decimalToBinary(n):  
-    return bin(n).replace("0b", "") 
+    return bin(n).replace("0b", "")
+
+def leadingZeros(length, bin_num):
+    leadingZeros = length - len(bin_num)
+    return "0"*leadingZeros + bin_num
 
 def initialize(commands):
     memory = {}
@@ -63,8 +67,8 @@ def initialize(commands):
         else:
             address = c[0][c[0].index("[")+1:len(c[0])-1]
             binaryValue = decimalToBinary(int(c[1]))
-            leadingZeros = 36 - len(binaryValue)
-            binary36 = "0"*leadingZeros + binaryValue
+            
+            binary36 = leadingZeros(36, binaryValue)
             
             memory[address] = ""
             for i in range(len(mask)):
@@ -79,7 +83,139 @@ def initialize(commands):
     return sum
 
 
+"""
+--- Part Two ---
+For some reason, the sea port's computer system still can't communicate with your ferry's docking program. It must be using version 2 of the decoder chip!
+
+A version 2 decoder chip doesn't modify the values being written at all. Instead, it acts as a memory address decoder. Immediately before a value is written to memory, each bit in the bitmask modifies the corresponding bit of the destination memory address in the following way:
+
+If the bitmask bit is 0, the corresponding memory address bit is unchanged.
+If the bitmask bit is 1, the corresponding memory address bit is overwritten with 1.
+If the bitmask bit is X, the corresponding memory address bit is floating.
+A floating bit is not connected to anything and instead fluctuates unpredictably. In practice, this means the floating bits will take on all possible values, potentially causing many memory addresses to be written all at once!
+
+For example, consider the following program:
+
+mask = 000000000000000000000000000000X1001X
+mem[42] = 100
+mask = 00000000000000000000000000000000X0XX
+mem[26] = 1
+When this program goes to write to memory address 42, it first applies the bitmask:
+
+address: 000000000000000000000000000000101010  (decimal 42)
+mask:    000000000000000000000000000000X1001X
+result:  000000000000000000000000000000X1101X
+After applying the mask, four bits are overwritten, three of which are different, and two of which are floating. Floating bits take on every possible combination of values; with two floating bits, four actual memory addresses are written:
+
+000000000000000000000000000000011010  (decimal 26)
+000000000000000000000000000000011011  (decimal 27)
+000000000000000000000000000000111010  (decimal 58)
+000000000000000000000000000000111011  (decimal 59)
+Next, the program is about to write to memory address 26 with a different bitmask:
+
+address: 000000000000000000000000000000011010  (decimal 26)
+mask:    00000000000000000000000000000000X0XX
+result:  00000000000000000000000000000001X0XX
+This results in an address with three floating bits, causing writes to eight memory addresses:
+
+000000000000000000000000000000010000  (decimal 16)
+000000000000000000000000000000010001  (decimal 17)
+000000000000000000000000000000010010  (decimal 18)
+000000000000000000000000000000010011  (decimal 19)
+000000000000000000000000000000011000  (decimal 24)
+000000000000000000000000000000011001  (decimal 25)
+000000000000000000000000000000011010  (decimal 26)
+000000000000000000000000000000011011  (decimal 27)
+The entire 36-bit address space still begins initialized to the value 0 at every address, and you still need the sum of all values left in memory at the end of the program. In this example, the sum is 208.
+
+Execute the initialization program using an emulator for a version 2 decoder chip. What is the sum of all values left in memory after it completes?
+"""
+
+def calculateCombinations(bin_address):
+    combinations = []
+    
+    # xCount = 0
+    xPositions = []
+
+    for i in range(len(bin_address)):
+        # find each X and add its idx to a list
+        if bin_address[i] == "X":
+            xPositions.append(i)
+            # xCount += 1
+
+    if len(xPositions) > 0:
+        for i in range(2**(len(xPositions))):
+            # need to generate all possible combos of 0s & 1s
+            # w/ leading 0s
+            possible = decimalToBinary(i)
+
+            while len(possible) < len(xPositions):
+                possible = "0"+possible
+            
+            combinations.append(possible)
+        
+
+    addresses = []
+
+    for c in combinations:
+        # need to insert combination[i] into binary number
+        # current combo associated idx is in xPositions[i]
+        newAddress = ""
+        currPos = 0
+        for i in range(len(bin_address)):
+            if currPos < len(xPositions) and i == xPositions[currPos]:
+                newAddress += c[currPos]
+                currPos += 1
+            else:
+                newAddress += bin_address[i]
+            
+        
+        addresses.append(newAddress)
+
+    return addresses
+
+
+def initialize_v2(commands):
+    memory = {}
+    mask = "X"*36
+    for c in commands:
+        if c[0] == "mask":
+            mask = c[1]
+        else:
+            address = c[0][c[0].index("[")+1:len(c[0])-1]
+            binaryAddress = decimalToBinary(int(address))
+            binary36 = leadingZeros(36, binaryAddress)
+
+            newVal = ""
+            for i in range(len(mask)):
+                if mask[i] != "0":
+                    newVal += mask[i]
+                else:
+                    newVal += binary36[i]
+                    
+            addresses = calculateCombinations(newVal)
+            
+            for a in addresses:
+                memory[a] = int(c[1])
+    
+    sum = 0
+    for val in memory.values():
+        sum += val
+    # print(memory)
+    return sum
+
+
 data = processData(f)
 # [print(d) for d in data]
 sumAllValues = initialize(data)
 print("Part 1:", sumAllValues)
+
+sumAllValuesV2 = initialize_v2(data)
+print("Part 2:", sumAllValuesV2)
+
+# binary = decimalToBinary(33323)
+# binary = leadingZeros(36, binary)
+# print(binary)
+# combos = initialize_v2([("mask", "100X100X101011111X100000100X11010011"),
+# ("mem[33323]", "349380")])
+# print(combos)
