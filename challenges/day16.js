@@ -92,11 +92,7 @@ function processData(arr) {
 
 function validateTicket(keyConstraints, numArr) {
     const numbers = {};
-    // const isValid = [];
-    // console.log(Object.keys(keys), Object.keys(keys).length);
-    // for (let i = 0; i < Object.keys(keys).length; i++) isValid.push(false);
 
-    // let keyI = 0;
     for (const key in keyConstraints) {
         for (let i = 0; i < numArr.length; i++) {
             if (numbers[numArr[i]] === undefined) {
@@ -108,14 +104,10 @@ function validateTicket(keyConstraints, numArr) {
                 (+numArr[i] >= +keyConstraints[key][1][0] &&
                     +numArr[i] <= keyConstraints[key][1][1])
             ) {
-                // isValid[keyI] = true;
                 numbers[numArr[i]] = true;
             }
         }
-        // keyI += 1;
     }
-    // console.log(numbers);
-    // for (bool of isValid) if (!bool) return false;
 
     // return invalid value
     for (const num in numbers) if (!numbers[num]) return +num;
@@ -176,11 +168,11 @@ function findTicketPattern(keyConstraints, validTicketArr) {
 
     for (const key in keyConstraints) {
         allTrue = false;
+
         idx = 0;
         while (idx < validTicketArr[0].length) {
             allTrue = true;
             for (let i = 0; i < validTicketArr.length; i++) {
-                // console.log(validTicketArr[i][idx]);
                 const range1 =
                     +validTicketArr[i][idx] >= +keyConstraints[key][0][0] &&
                     +validTicketArr[i][idx] <= +keyConstraints[key][0][1];
@@ -193,7 +185,8 @@ function findTicketPattern(keyConstraints, validTicketArr) {
                 }
             }
             if (allTrue) {
-                // save every idx where all tickets match
+                // save every idx where all tickets match b/c
+                // there will be duplicates which will need to be sorted later
                 if (!pattern[key]) {
                     pattern[key] = new Set();
                 }
@@ -270,5 +263,6 @@ fs.readFile(filename, "utf8", function (err, text) {
 
     const myTicket = returnTicketDetails(data.keys, data.ticket);
     const productOfDeparture = part2Product(myTicket);
+
     console.log("Part 2:", productOfDeparture);
 });
