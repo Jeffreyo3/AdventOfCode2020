@@ -48,7 +48,7 @@ function processData(arr) {
     }
 
     const data = {
-        keys: {},
+        keyConstraints: {},
         ticket: [],
         nearbyTickets: [],
     };
@@ -65,7 +65,7 @@ function processData(arr) {
             break;
         }
         const split = arr[idx].split(": ");
-        data.keys[split[0]] = split[1]
+        data.keyConstraints[split[0]] = split[1]
             .split(" or ")
             .map((item) => item.split("-"));
 
@@ -90,23 +90,23 @@ function processData(arr) {
     return data;
 }
 
-function validateTicket(keys, numArr) {
+function validateTicket(keyConstraints, numArr) {
     const numbers = {};
     // const isValid = [];
     // console.log(Object.keys(keys), Object.keys(keys).length);
     // for (let i = 0; i < Object.keys(keys).length; i++) isValid.push(false);
 
     // let keyI = 0;
-    for (const key in keys) {
+    for (const key in keyConstraints) {
         for (let i = 0; i < numArr.length; i++) {
             if (numbers[numArr[i]] === undefined) {
                 numbers[numArr[i]] = false;
             }
             if (
-                (+numArr[i] >= +keys[key][0][0] &&
-                    +numArr[i] <= +keys[key][0][1]) ||
-                (+numArr[i] >= +keys[key][1][0] &&
-                    +numArr[i] <= keys[key][1][1])
+                (+numArr[i] >= +keyConstraints[key][0][0] &&
+                    +numArr[i] <= +keyConstraints[key][0][1]) ||
+                (+numArr[i] >= +keyConstraints[key][1][0] &&
+                    +numArr[i] <= keyConstraints[key][1][1])
             ) {
                 // isValid[keyI] = true;
                 numbers[numArr[i]] = true;
@@ -123,17 +123,129 @@ function validateTicket(keys, numArr) {
     return true;
 }
 
-function scanningErrorRate(keys, ticketArr) {
+function scanningErrorRate(keyConstraints, ticketArr) {
     errorRate = 0;
 
     for (const ticket of ticketArr) {
-        const res = validateTicket(keys, ticket);
+        const res = validateTicket(keyConstraints, ticket);
         if (res !== true) {
             errorRate += res;
         }
     }
 
     return errorRate;
+}
+
+/* 
+--- Part Two ---
+Now that you've identified which tickets contain invalid values, discard those tickets entirely. Use the remaining valid tickets to determine which field is which.
+
+Using the valid ranges for each field, determine what order the fields appear on the tickets. The order is consistent between all tickets: if seat is the third field, it is the third field on every ticket, including your ticket.
+
+For example, suppose you have the following notes:
+
+class: 0-1 or 4-19
+row: 0-5 or 8-19
+seat: 0-13 or 16-19
+
+your ticket:
+11,12,13
+
+nearby tickets:
+3,9,18
+15,1,5
+5,14,9
+Based on the nearby tickets in the above example, the first position must be row, the second position must be class, and the third position must be seat; you can conclude that in your ticket, class is 12, row is 11, and seat is 13.
+
+Once you work out which field is which, look for the six fields on your ticket that start with the word departure. What do you get if you multiply those six values together?
+*/
+
+function discardInvalidTickets(keyConstraints, ticketArr) {
+    const newArr = [];
+    for (const ticket of ticketArr) {
+        if (validateTicket(keyConstraints, ticket) === true) {
+            newArr.push(ticket);
+        }
+    }
+    return newArr;
+}
+
+function findTicketPattern(keyConstraints, validTicketArr) {
+    // save patern as key: ticket idx
+    const pattern = {};
+
+    for (const key in keyConstraints) {
+        allTrue = false;
+        idx = 0;
+        while (idx < validTicketArr[0].length) {
+            allTrue = true;
+            for (let i = 0; i < validTicketArr.length; i++) {
+                // console.log(validTicketArr[i][idx]);
+                const range1 =
+                    +validTicketArr[i][idx] >= +keyConstraints[key][0][0] &&
+                    +validTicketArr[i][idx] <= +keyConstraints[key][0][1];
+                const range2 =
+                    +validTicketArr[i][idx] >= +keyConstraints[key][1][0] &&
+                    +validTicketArr[i][idx] <= +keyConstraints[key][1][1];
+                const valid = range1 || range2;
+                if (!valid) {
+                    allTrue = false;
+                }
+            }
+            if (allTrue) {
+                // save every idx where all tickets match
+                if (!pattern[key]) {
+                    pattern[key] = new Set();
+                }
+                pattern[key].add(idx);
+            }
+            idx += 1;
+        }
+    }
+
+    const keys = {};
+    let remaining = validTicketArr[0].length;
+    while (remaining > 0) {
+        // find key with single item, save it to keys & delete value
+        // from pattern obj
+        let singleValue = null;
+        for (const key in pattern) {
+            if (pattern[key].size === 1) {
+                singleValue = pattern[key].values().next().value;
+                keys[key] = singleValue;
+                delete pattern[key];
+                break;
+            }
+        }
+
+        // go through remaining keys and remove from sets
+        for (const key in pattern) {
+            if (pattern[key].has(singleValue)) {
+                pattern[key].delete(singleValue);
+            }
+        }
+        remaining -= 1;
+    }
+
+    return keys;
+}
+
+function returnTicketDetails(keys, ticket) {
+    const ticketDetails = {};
+    for (key in keys) {
+        ticketDetails[key] = ticket[keys[key]];
+    }
+    return ticketDetails;
+}
+
+function part2Product(obj) {
+    let product = 1;
+    for (key in obj) {
+        if (key.includes("departure")) {
+            product *= obj[key];
+        }
+    }
+    return product;
 }
 
 fs.readFile(filename, "utf8", function (err, text) {
@@ -143,6 +255,20 @@ fs.readFile(filename, "utf8", function (err, text) {
 
     const data = processData(input);
 
-    const errorRate = scanningErrorRate(data.keys, data.nearbyTickets);
+    const errorRate = scanningErrorRate(
+        data.keyConstraints,
+        data.nearbyTickets
+    );
     console.log("Part 1:", errorRate);
+
+    data.validNearbyTickets = discardInvalidTickets(
+        data.keyConstraints,
+        data.nearbyTickets
+    );
+
+    data.keys = findTicketPattern(data.keyConstraints, data.validNearbyTickets);
+
+    const myTicket = returnTicketDetails(data.keys, data.ticket);
+    const productOfDeparture = part2Product(myTicket);
+    console.log("Part 2:", productOfDeparture);
 });
