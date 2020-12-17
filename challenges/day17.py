@@ -179,14 +179,18 @@ def evalNeighbors(coords, cube):
         for y in range(coords["y"]-1, coords["y"]+2):
             for z in range(coords["z"]-1, coords["z"]+2):
                 if(x == coords["x"] and y == coords["y"] and z == coords["z"]):
-                    # print("same", x, y, z)
+                    # don't calculate current cell
                     continue
                 key = str(x) + " " + str(y) + " " + str(z)
-                # print(x,y,z)
+                
                 if(key in cube.keys()):
                     if(cube[key] == "#"):
                         living += 1
-    # print("living:", living, "co", coords)
+                # since 4 living neighbor cells & above all result in the same thing,
+                # stop the looping completely
+                if (living >= 4):
+                    return living
+                    
     return living
     
 def simulate(cube, cycles):
@@ -205,8 +209,6 @@ def simulate(cube, cycles):
                     if(not(key in cube.keys())):
                         cube[key] = "."
                     living = evalNeighbors({"x": x, "y": y, "z": z}, cube)
-                    # if(living > 0):
-                        # print(living, "---", key)
 
                     if(cube[key] == "#"):
                         if(living == 2 or living == 3):
@@ -524,14 +526,19 @@ def evalNeighbors4d(coords, cube):
             for z in range(coords["z"]-1, coords["z"]+2):
                 for w in range(coords["w"]-1, coords["w"]+2):
                     if(x == coords["x"] and y == coords["y"] and z == coords["z"] and w == coords["w"]):
-                        # print("same", x, y, z)
+                        # don't calculate current cell
                         continue
+
                     key = str(x) + " " + str(y) + " " + str(z) + " " + str(w)
-                    # print(x,y,z)
+                    
                     if(key in cube.keys()):
                         if(cube[key] == "#"):
                             living += 1
-    # print("living:", living, "co", coords)
+                # since 4 living neighbor cells & above all result in the same thing,
+                # stop the looping completely
+                    if(living >= 4):
+                        return living
+                        
     return living
     
 def simulate4d(cube, cycles):
@@ -540,6 +547,10 @@ def simulate4d(cube, cycles):
         cycles -= 1
         nextCube = {}
         nextCube["key"] = cube["key"]
+        # this helps accomplish the goal of making sure every neighbor is accounted for
+        # but it results in pretty poor optimization when all the 'new' neighbors are dead
+        # will need to revisit to optimize so that the next iteration of the while loop doesn't
+        # contain layers of completely dead cells (which will not be made live the next iteration)
         nextCube["wz_range"] = (cube["wz_range"][0]-1, cube["wz_range"][1]+1)
         nextCube["xy_range"] = (cube["xy_range"][0]-1, cube["xy_range"][1]+1)
 
@@ -551,8 +562,6 @@ def simulate4d(cube, cycles):
                         if(not(key in cube.keys())):
                             cube[key] = "."
                         living = evalNeighbors4d({"x": x, "y": y, "z": z, "w": w}, cube)
-                        # if(living > 0):
-                        #     print(living, "---", key)
 
                         if(cube[key] == "#"):
                             if(living == 2 or living == 3):
@@ -580,15 +589,13 @@ def countLivingCells4d(cube):
     return living
 
 data = processData(f)
-cube = createCube(data)
 
+cube = createCube(data)
 cube = simulate(cube, 6)
 living = countLivingCells(cube)
-# printCube(cube)
 print("Part 1:", living)
 
 cube4d = createCube4d(data)
-
 cube4d = simulate4d(cube4d, 6)
 living4d = countLivingCells4d(cube4d)
 print("Part 2:", living4d)
