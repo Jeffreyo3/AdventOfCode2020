@@ -245,10 +245,350 @@ def countLivingCells(cube):
                     living += 1
     return living
 
+"""
+--- Part Two ---
+For some reason, your simulated results don't match what the experimental energy source engineers expected. Apparently, the pocket dimension actually has four spatial dimensions, not three.
+
+The pocket dimension contains an infinite 4-dimensional grid. At every integer 4-dimensional coordinate (x,y,z,w), there exists a single cube (really, a hypercube) which is still either active or inactive.
+
+Each cube only ever considers its neighbors: any of the 80 other cubes where any of their coordinates differ by at most 1. For example, given the cube at x=1,y=2,z=3,w=4, its neighbors include the cube at x=2,y=2,z=3,w=3, the cube at x=0,y=2,z=3,w=4, and so on.
+
+The initial state of the pocket dimension still consists of a small flat region of cubes. Furthermore, the same rules for cycle updating still apply: during each cycle, consider the number of active neighbors of each cube.
+
+For example, consider the same initial state as in the example above. Even though the pocket dimension is 4-dimensional, this initial state represents a small 2-dimensional slice of it. (In particular, this initial state defines a 3x3x1x1 region of the 4-dimensional space.)
+
+Simulating a few cycles from this initial state produces the following configurations, where the result of each cycle is shown layer-by-layer at each given z and w coordinate:
+
+Before any cycles:
+
+z=0, w=0
+.#.
+..#
+###
+
+
+After 1 cycle:
+
+z=-1, w=-1
+#..
+..#
+.#.
+
+z=0, w=-1
+#..
+..#
+.#.
+
+z=1, w=-1
+#..
+..#
+.#.
+
+z=-1, w=0
+#..
+..#
+.#.
+
+z=0, w=0
+#.#
+.##
+.#.
+
+z=1, w=0
+#..
+..#
+.#.
+
+z=-1, w=1
+#..
+..#
+.#.
+
+z=0, w=1
+#..
+..#
+.#.
+
+z=1, w=1
+#..
+..#
+.#.
+
+
+After 2 cycles:
+
+z=-2, w=-2
+.....
+.....
+..#..
+.....
+.....
+
+z=-1, w=-2
+.....
+.....
+.....
+.....
+.....
+
+z=0, w=-2
+###..
+##.##
+#...#
+.#..#
+.###.
+
+z=1, w=-2
+.....
+.....
+.....
+.....
+.....
+
+z=2, w=-2
+.....
+.....
+..#..
+.....
+.....
+
+z=-2, w=-1
+.....
+.....
+.....
+.....
+.....
+
+z=-1, w=-1
+.....
+.....
+.....
+.....
+.....
+
+z=0, w=-1
+.....
+.....
+.....
+.....
+.....
+
+z=1, w=-1
+.....
+.....
+.....
+.....
+.....
+
+z=2, w=-1
+.....
+.....
+.....
+.....
+.....
+
+z=-2, w=0
+###..
+##.##
+#...#
+.#..#
+.###.
+
+z=-1, w=0
+.....
+.....
+.....
+.....
+.....
+
+z=0, w=0
+.....
+.....
+.....
+.....
+.....
+
+z=1, w=0
+.....
+.....
+.....
+.....
+.....
+
+z=2, w=0
+###..
+##.##
+#...#
+.#..#
+.###.
+
+z=-2, w=1
+.....
+.....
+.....
+.....
+.....
+
+z=-1, w=1
+.....
+.....
+.....
+.....
+.....
+
+z=0, w=1
+.....
+.....
+.....
+.....
+.....
+
+z=1, w=1
+.....
+.....
+.....
+.....
+.....
+
+z=2, w=1
+.....
+.....
+.....
+.....
+.....
+
+z=-2, w=2
+.....
+.....
+..#..
+.....
+.....
+
+z=-1, w=2
+.....
+.....
+.....
+.....
+.....
+
+z=0, w=2
+###..
+##.##
+#...#
+.#..#
+.###.
+
+z=1, w=2
+.....
+.....
+.....
+.....
+.....
+
+z=2, w=2
+.....
+.....
+..#..
+.....
+.....
+After the full six-cycle boot process completes, 848 cubes are left in the active state.
+
+Starting with your given initial configuration, simulate six cycles in a 4-dimensional space. How many cubes are left in the active state after the sixth cycle?
+"""
+
+def createCube4d(data):
+    wzMin = int(-len(data)/2)
+    wzMax = int(len(data)/2)+1
+    
+    cube = {
+        "key": ["x", "y", "z", "w"],
+        "xy_range": (0, len(data)),
+        "wz_range": (wzMin, wzMax)
+    }
+
+    for x in range(len(data)):
+        for y in range(len(data[x])):
+            for z in range(wzMin, wzMax):
+                for w in range(wzMin, wzMax):
+                    key = str(x) + " " + str(y) + " " + str(z) + " " + str(w)
+                    if(z == 0 and w == 0):
+                        cube[key] = data[x][y]
+                    else:
+                        cube[key] = "."
+    return cube
+
+def evalNeighbors4d(coords, cube):
+    living = 0
+    for x in range(coords["x"]-1, coords["x"]+2):
+        for y in range(coords["y"]-1, coords["y"]+2):
+            for z in range(coords["z"]-1, coords["z"]+2):
+                for w in range(coords["w"]-1, coords["w"]+2):
+                    if(x == coords["x"] and y == coords["y"] and z == coords["z"] and w == coords["w"]):
+                        # print("same", x, y, z)
+                        continue
+                    key = str(x) + " " + str(y) + " " + str(z) + " " + str(w)
+                    # print(x,y,z)
+                    if(key in cube.keys()):
+                        if(cube[key] == "#"):
+                            living += 1
+    # print("living:", living, "co", coords)
+    return living
+    
+def simulate4d(cube, cycles):
+
+    while(cycles > 0):
+        cycles -= 1
+        nextCube = {}
+        nextCube["key"] = cube["key"]
+        nextCube["wz_range"] = (cube["wz_range"][0]-1, cube["wz_range"][1]+1)
+        nextCube["xy_range"] = (cube["xy_range"][0]-1, cube["xy_range"][1]+1)
+
+        for x in range(nextCube["xy_range"][0], nextCube["xy_range"][1]):
+            for y in range(nextCube["xy_range"][0], nextCube["xy_range"][1]):
+                for z in range(nextCube["wz_range"][0], nextCube["wz_range"][1]):
+                    for w in range(nextCube["wz_range"][0], nextCube["wz_range"][1]):
+                        key = str(x) + " " + str(y) + " " + str(z) + " " + str(w)
+                        if(not(key in cube.keys())):
+                            cube[key] = "."
+                        living = evalNeighbors4d({"x": x, "y": y, "z": z, "w": w}, cube)
+                        # if(living > 0):
+                        #     print(living, "---", key)
+
+                        if(cube[key] == "#"):
+                            if(living == 2 or living == 3):
+                                nextCube[key] = cube[key]
+                            else:
+                                nextCube[key] = "."
+                        else:
+                            if(living == 3):
+                                nextCube[key] = "#"
+                            else:
+                                nextCube[key] = cube[key]
+        cube = nextCube
+
+    return cube
+
+def countLivingCells4d(cube):
+    living = 0
+    for x in range(cube["xy_range"][0], cube["xy_range"][1]):
+        for y in range(cube["xy_range"][0], cube["xy_range"][1]):
+            for z in range(cube["wz_range"][0], cube["wz_range"][1]):
+                for w in range(cube["wz_range"][0], cube["wz_range"][1]):
+                    key = str(x) + " " + str(y) + " " + str(z) + " " + str(w)
+                    if(cube[key] == "#"):
+                        living += 1
+    return living
+
 data = processData(f)
 cube = createCube(data)
 
 cube = simulate(cube, 6)
 living = countLivingCells(cube)
 # printCube(cube)
-print("Part 1:",living)
+print("Part 1:", living)
+
+cube4d = createCube4d(data)
+
+cube4d = simulate4d(cube4d, 6)
+living4d = countLivingCells4d(cube4d)
+print("Part 2:", living4d)
