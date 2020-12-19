@@ -74,12 +74,65 @@ def evalEquationString(equation):
     assert len(stack) == 1, f"operations {operations} stack {stack}"
     return stack[0]
 
-def sumResultingValues(arr):
+def sumResultingValues(arr, evalMethod):
     count = 0
     for equationString in arr:
-        count += evalEquationString(equationString)
+        count += evalMethod(equationString)
     return count
 
+""" 
+--- Part Two ---
+You manage to answer the child's questions and they finish part 1 of their homework, but get stuck when they reach the next section: advanced math.
+
+Now, addition and multiplication have different precedence levels, but they're not the ones you're familiar with. Instead, addition is evaluated before multiplication.
+
+For example, the steps to evaluate the expression 1 + 2 * 3 + 4 * 5 + 6 are now as follows:
+
+1 + 2 * 3 + 4 * 5 + 6
+  3   * 3 + 4 * 5 + 6
+  3   *   7   * 5 + 6
+  3   *   7   *  11
+     21       *  11
+         231
+Here are the other examples from above:
+
+1 + (2 * 3) + (4 * (5 + 6)) still becomes 51.
+2 * 3 + (4 * 5) becomes 46.
+5 + (8 * 3 + 9 + 3 * 4 * 3) becomes 1445.
+5 * 9 * (7 * 3 * 3 + 9 * 3 + (8 + 6 * 4)) becomes 669060.
+((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2 becomes 23340.
+What do you get if you add up the results of evaluating the homework problems using these new rules?
+"""
+def evalAdvEquationString(equation):
+    operations = []
+    stack = []
+    def apply_top_op():
+        if operations[-1] == '+':
+            stack[-2:] = [stack[-2] + stack[-1]]
+        elif operations[-1] == '*':
+            stack[-2:] = [stack[-2] * stack[-1]]
+        else:
+            raise Exception(f"Bad state; opstack {operations} stack {stack}")
+        operations.pop()
+
+    for m in re.finditer(r'([()])|(\d+)|([+*])', equation):
+        if m.group(1) == '(':
+            operations.append('(')
+        elif m.group(1) == ')':
+            while operations[-1] != '(':
+                apply_top_op()
+            operations.pop()
+        elif m.group(2):
+            stack.append(int(m.group(2)))
+        else:
+            while operations and m.group(3) == '*' and operations[-1] == '+':
+                apply_top_op()
+            operations.append(m.group(3))
+    while operations:
+        apply_top_op()
+    assert len(stack) == 1, f"operations {operations} stack {stack}"
+    return stack[0]
 
 data = processData(f)
-print(sumResultingValues(data))
+print(sumResultingValues(data, evalEquationString))
+print(sumResultingValues(data, evalAdvEquationString))
